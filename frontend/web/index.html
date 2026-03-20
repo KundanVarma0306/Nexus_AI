@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus | AI Research Assistant</title>
+    <!-- Modern Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="root-layout">
+        
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="brand" onclick="navigate('home')">
+                    <div class="brand-icon">
+                        <i data-lucide="sparkles" size="18"></i>
+                    </div>
+                    <span>Nexus AI</span>
+                </div>
+            </div>
+
+            <button class="new-chat-trigger" onclick="newChatStart()">
+                <i data-lucide="plus" size="18"></i>
+                Start Research
+            </button>
+
+            <nav class="sidebar-nav">
+                
+                <div class="nav-group">
+                    <div class="nav-label">Nexus Engine</div>
+                    <a href="#" class="nav-link active" id="nav-home" onclick="navigate('home')">
+                        <i data-lucide="compass" size="18"></i>
+                        <span>Discovery Hub</span>
+                    </a>
+                    <a href="#" class="nav-link" id="nav-chat" onclick="navigate('chat')">
+                        <i data-lucide="message-square" size="18"></i>
+                        <span>Research Synthesis</span>
+                    </a>
+                    <a href="#" class="nav-link" id="nav-library" onclick="navigate('library')">
+                        <i data-lucide="library" size="18"></i>
+                        <span>Knowledge Base</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-label">Recent Searches</div>
+                    <div id="sidebar-history-list" class="history-container">
+                        <!-- History items injected here -->
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-label">Quick Links</div>
+                    <a href="#" class="nav-link" onclick="openModal('upload')">
+                        <i data-lucide="upload-cloud" size="18"></i>
+                        <span>Upload Documents</span>
+                    </a>
+                    <a href="#" class="nav-link" onclick="navigate('settings')">
+                        <i data-lucide="settings" size="18"></i>
+                        <span>Settings</span>
+                    </a>
+                </div>
+
+            </nav>
+
+            <!-- Sidebar footer removed -->
+        </aside>
+
+        <!-- MAIN VIEWPORT -->
+        <main class="main-viewport">
+            
+            <header class="top-bar">
+                <div class="header-left">
+                    <button class="action-icon-btn mobile-toggle" style="display:none;" id="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">
+                        <i data-lucide="menu" size="20"></i>
+                    </button>
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); font-weight: 500;">
+                        <span class="breadcrumb-item" onclick="navigate('home')">Nexus</span>
+                        <i data-lucide="chevron-right" size="12"></i>
+                        <span id="breadcrumb-active" style="color: var(--text-main);">Discovery Hub</span>
+                    </div>
+                </div>                <div class="header-right">
+                    <!-- Metrics button removed -->
+                </div>
+            </header>
+
+            <!-- PAGE: HOME (DISCOVERY) -->
+            <section id="page-home" class="page-content active">
+                <div class="home-hero">
+                    <h1 class="hero-title">Nexus Synthesis Engine</h1>
+                    <p class="hero-subtitle">Unified research across your private knowledge nodes.</p>
+
+                    <div class="research-input-container">
+                        <div class="search-field-wrap">
+                            <i data-lucide="sparkles" size="22" style="color: var(--primary);"></i>
+                            <input type="text" id="hero-research-query" placeholder="Ask anything about your document library..." autocomplete="off">
+                            <button class="search-action-btn" onclick="triggerHeroQuery()">
+                                <i data-lucide="chevron-right" size="22"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard space -->
+
+                    <!-- Research nodes will be displayed here -->
+                </div>
+            </section>
+
+            <!-- PAGE: CHAT (RESEARCH SYNTHESIS) -->
+            <section id="page-chat" class="page-content">
+                <div class="chat-window">
+                    <div class="chat-history" id="chat-history">
+                        <!-- Messages Injected -->
+                    </div>
+
+                    <div class="chat-input-dock">
+                        <button class="action-icon-btn" onclick="openModal('upload')">
+                            <i data-lucide="paperclip" size="18"></i>
+                        </button>
+                        <textarea id="chat-input" placeholder="Continue research..." rows="1"></textarea>
+                        
+                        <!-- Actions -->
+                        <button class="action-icon-btn primary" id="chat-send-btn" onclick="NexusApp.synthesize()">
+                            <i data-lucide="arrow-up" size="18"></i>
+                        </button>
+                        <button class="action-icon-btn stop" id="chat-stop-btn" onclick="NexusApp.halt()" style="display:none;">
+                            <i data-lucide="square" size="18" style="fill: currentColor;"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE: LIBRARY (KNOWLEDGE BASE) -->
+            <section id="page-library" class="page-content">
+                <div class="kb-layout">
+                    <div class="section-head">
+                        <h2 style="font-size: 1.8rem; letter-spacing: -0.01em;">Document Library</h2>
+                        <p style="color: var(--text-muted);">Secure local index of your research documents.</p>
+                    </div>
+                    
+                    <div class="grid-cards" id="library-grid">
+                        <!-- Tiles Injected -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE: EXPORT (SYNTHESIS REVIEW) -->
+            <section id="page-export" class="page-content">
+                <div class="kb-layout" style="max-width: 900px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px;">
+                        <div>
+                            <h2 style="font-size: 1.8rem; letter-spacing: -0.01em;">Synthesis Review</h2>
+                            <p style="color: var(--text-muted);">Review and export your comprehensive research findings.</p>
+                        </div>
+                        <button class="new-chat-trigger" style="margin:0;" onclick="NexusApp.exportSynthesis()">
+                            <i data-lucide="download"></i> Download Markdown
+                        </button>
+                    </div>
+                    
+                    <div id="export-preview-container" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 16px; min-height: 500px; padding: 40px;">
+                        <!-- Review content injected -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE: STATS (ENGINE DASHBOARD) -->
+            <section id="page-stats" class="page-content">
+                <div class="kb-layout">
+                    <div class="section-head">
+                        <h2 style="font-size: 1.8rem; letter-spacing: -0.01em;">Neural Engine Metrics</h2>
+                        <p style="color: var(--text-muted);">Real-time diagnostics of your local research infrastructure.</p>
+                    </div>
+                    
+                    <div class="quick-dashboard" id="stats-page-grid">
+                        <!-- Metrics injected -->
+                    </div>
+
+                    <div style="margin-top: 40px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 style="font-size: 1.1rem; font-weight: 700;">Infrastructure Log</h3>
+                            <button class="tile-btn del" style="max-width: 150px;" onclick="NexusApp.purgeAll()">
+                                <i data-lucide="zap"></i> Purge Entire Index
+                            </button>
+                        </div>
+                        <div id="engine-log-container" style="background: var(--bg-muted); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 16px; color: var(--text-secondary); height : 200px; overflow-y: auto;">
+                            <div>[SYSTEM] Neural Synthesis Engine initialized...</div>
+                            <div>[INFO] Mistral Node connected successfully.</div>
+                            <div>[INFO] Index Storage: 0.72 MB Verified.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE: SETTINGS (MODEL CONTROL) -->
+            <section id="page-settings" class="page-content">
+                <div class="kb-layout" style="max-width: 800px;">
+                    <div class="section-head">
+                        <h2 style="font-size: 1.8rem; letter-spacing: -0.01em;">Engine Preferences</h2>
+                        <p style="color: var(--text-muted);">Configure your neural synthesis parameters.</p>
+                    </div>
+
+                    <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 32px; display: flex; flex-direction: column; gap: 32px;">
+                        <div>
+                            <h3 style="font-size: 1.1rem; margin-bottom: 8px;">Nexus Model Selection</h3>
+                            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;">Choose the LLM architecture for your research lab.</p>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                <div class="metric-card" id="model-precise" onclick="NexusApp.setModel('precise')" style="padding: 24px; border-color: var(--primary); background: var(--primary-soft); height: auto;">
+                                    <div style="display: flex; justify-content: space-between; width: 100%; align-items: flex-start; margin-bottom: 12px;">
+                                        <i data-lucide="target" style="color: var(--primary);"></i>
+                                        <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--primary);">Precise</span>
+                                    </div>
+                                    <span style="font-weight: 700; font-size: 1rem;">Mistral Large</span>
+                                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Optimum accuracy for deep synthesis and complex reasoning.</p>
+                                </div>
+                                <div class="metric-card" id="model-fast" onclick="NexusApp.setModel('fast')" style="padding: 24px; height:auto;">
+                                    <div style="display: flex; justify-content: space-between; width: 100%; align-items: flex-start; margin-bottom: 12px;">
+                                        <i data-lucide="zap" style="color: var(--text-muted);"></i>
+                                        <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">High Speed</span>
+                                    </div>
+                                    <span style="font-weight: 700; font-size: 1rem;">Mistral Small</span>
+                                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Lower latency for quick summaries and initial discovery.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="padding-top: 32px; border-top: 1px solid var(--border-subtle);">
+                            <h3 style="font-size: 1.1rem; margin-bottom: 16px;">Advanced Indexing</h3>
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--bg-muted); border-radius: 12px;">
+                                <div>
+                                    <span style="font-weight: 600; font-size: 0.95rem;">Cross-Document Synthesis</span>
+                                    <p style="font-size: 0.8rem; color: var(--text-muted);">Allow engine to pull context from multiple nodes simultaneously.</p>
+                                </div>
+                                <div class="toggle-switch active" id="toggle-synthesis" onclick="NexusApp.toggleSynthesis()">
+                                    <div class="toggle-nob"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL: UPLOAD -->
+    <div class="overlay" id="upload-overlay" onclick="closeModalOnOuter(event)">
+        <div class="modal-sheet">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i data-lucide="upload-cloud" style="color: var(--primary);"></i>
+                    <h3 style="font-size: 1rem; font-weight: 700;">Ingest Sources</h3>
+                </div>
+                <button class="action-icon-btn" onclick="closeModal('upload')">
+                    <i data-lucide="x" size="18"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="dropzone" id="dropzone">
+                    <i data-lucide="file-plus" size="32" style="color: var(--primary); margin-bottom: 12px;"></i>
+                    <p style="font-weight: 600; font-size: 0.95rem;">Drop PDF/TXT documents or click to browse</p>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Max local file size: 25MB</p>
+                    <input type="file" id="file-selector" hidden multiple>
+                </div>
+
+                <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-subtle);">
+                    <div style="display: flex; gap: 8px;">
+                        <input type="url" id="url-research-input" placeholder="Paste research URL (arXiv, etc.)" 
+                            style="flex: 1; padding: 10px 14px; border: 1px solid var(--border-subtle); border-radius: 8px; outline: none; transition: border 0.2s;">
+                        <button class="new-chat-trigger" style="margin: 0; padding: 0 20px;" onclick="ingestUrl()">Sync</button>
+                    </div>
+                </div>
+
+                <div id="upload-progress-wrap" style="display:none; margin-top: 24px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px;">
+                        <span id="upload-status" style="font-weight: 600;">Ingesting Node...</span>
+                        <span id="upload-percent">0%</span>
+                    </div>
+                    <div style="height:4px; background: var(--bg-muted); border-radius: 2px; overflow: hidden;">
+                        <div id="upload-bar" style="height: 100%; background: var(--primary); width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: VIEWER -->
+    <div class="overlay" id="viewer-overlay" onclick="closeModalOnOuter(event)">
+        <div class="modal-sheet" style="max-width: 1100px; height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i data-lucide="file-text" style="color: var(--primary);"></i>
+                    <h3 id="viewer-doc-title" style="font-size: 1rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 600px;">Document Preview</h3>
+                </div>
+                <button class="action-icon-btn" onclick="closeModal('viewer')">
+                    <i data-lucide="x" size="18"></i>
+                </button>
+            </div>
+            <div style="flex: 1; background: #f8fafc;">
+                <iframe id="viewer-frame" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: STATS -->
+    <div class="overlay" id="stats-overlay" onclick="closeModalOnOuter(event)">
+        <div class="modal-sheet" style="max-width: 800px;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i data-lucide="bar-chart-3" style="color: var(--primary);"></i>
+                    <h3 style="font-size: 1rem; font-weight: 700;">Engine Analytics</h3>
+                </div>
+                <button class="action-icon-btn" onclick="closeModal('stats')">
+                    <i data-lucide="x" size="18"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="stats-detail-grid" class="stats-grid">
+                    <!-- Stats cards injected -->
+                </div>
+                
+                <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 12px;">
+                    <button class="tile-btn del" style="max-width: 150px;" onclick="NexusApp.purgeAll()">
+                        <i data-lucide="zap"></i> Purge Index
+                    </button>
+                    <button class="new-chat-trigger" style="margin:0;" onclick="NexusApp.updateStatsDetail()">
+                        <i data-lucide="refresh-cw"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI LOADING OVERLAY -->
+    <div id="global-loader" style="display:none; position: fixed; inset:0; background:rgba(255,255,255,0.7); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; flex-direction: column;">
+        <div class="shimmer" style="width: 48px; height: 48px; border-radius: 12px;"></div>
+        <p style="margin-top: 20px; font-weight: 600; color: var(--text-main);">Neural Processing...</p>
+    </div>
+
+
+    <div id="toast-anchor" style="position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
+    <script src="main.js"></script>
+    <script>
+        // Init Lucide
+        lucide.createIcons();
+    </script>
+</body>
+</html>

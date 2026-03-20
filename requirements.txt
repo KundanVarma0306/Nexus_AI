@@ -1,0 +1,57 @@
+# AI-Powered Research Assistant Using LangChain & Mistral AI
+# Production-Grade Dependencies
+
+# Core Framework
+langchain>=0.3.0
+langchain-community>=0.3.0
+langchain-mistralai>=0.1.0
+
+# Vector Database
+chromadb>=0.5.0
+
+# Mistral AI
+mistralai>=1.0.0
+
+# FastAPI & Server
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+gunicorn>=23.0.0
+
+# Streamlit Frontend
+streamlit>=1.38.0
+
+# Data Processing
+pydantic>=2.9.0
+pydantic-settings>=2.5.0
+
+# Document Processing
+pypdf>=4.3.0
+beautifulsoup4>=4.12.0
+requests>=2.32.0
+
+# Utilities
+python-dotenv>=1.0.0
+tiktoken>=0.7.0
+
+# File Handling
+python-multipart>=0.0.9
+
+# Caching
+diskcache>=5.6.0
+
+# Text Processing
+lxml>=5.3.0
+html2text>=2024.1.0
+
+# Async Support
+httpx>=0.27.0
+aiofiles>=24.1.0
+
+# Type Hints
+typing-extensions>=4.12.0
+
+# Numerical Computing
+numpy>=1.26.0
+
+# Hybrid Search
+rank_bm25>=0.2.2

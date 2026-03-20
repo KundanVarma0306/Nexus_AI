@@ -1,0 +1,1 @@
+Semantic search vs Hybrid search in RAG. Semantic search relies on vector embeddings to find relevant content based on meaning. Hybrid search combines semantic search with keyword search (BM25) to improve results for specific terms and names.

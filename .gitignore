@@ -1,0 +1,39 @@
+# AI Research Assistant - Git Ignore Matrix
+
+# Production Environment Settings
+.env
+.env.local
+.env.*
+
+# Local Neural Storage
+database/
+uploads/
+cache/
+data/
+*.sqlite3
+
+# Python Runtime
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# OS Specific
+.DS_Store
+Thumb.db
+
+# ID and Tool Artifacts
+.agent/
+.agents/
+.gemini/
+.idea/
+.vscode/
+
+# Build and Dist
+dist/
+build/
+*.egg-info/
