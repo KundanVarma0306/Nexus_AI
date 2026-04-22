@@ -13,7 +13,8 @@ const NexusApp = {
         config: {
             api: '/api',
             topK: 5,
-            strategy: 'hybrid'
+            strategy: 'hybrid',
+            model: 'precise'
         },
         abortController: null,
         stats: null,
@@ -23,9 +24,17 @@ const NexusApp = {
     // --- SYSTEM INITIALIZATION ---
     async init() {
         console.log("Initializing Nexus Neural Link...");
+        
+        // Load persisted model selection
+        const savedModel = localStorage.getItem('nexus_default_model');
+        if (savedModel) {
+            this.state.config.model = savedModel;
+        }
+
         this.bindGlobalEvents();
         await this.synchronize();
         this.refreshUI();
+        this.setModel(this.state.config.model);
         lucide.createIcons();
     },
 
@@ -114,6 +123,7 @@ const NexusApp = {
         if (pageId === 'library') this.renderLibrary();
         if (pageId === 'stats') this.renderMetrics();
         if (pageId === 'export') this.renderSynthesisArchive();
+        if (pageId === 'settings') this.refreshUI();
         
         lucide.createIcons();
 
@@ -156,7 +166,8 @@ const NexusApp = {
                 body: JSON.stringify({
                     query,
                     top_k: this.state.config.topK,
-                    search_type: this.state.config.strategy
+                    search_type: this.state.config.strategy,
+                    model: this.state.config.model === 'precise' ? 'mistral-large-latest' : 'codestral-latest'
                 }),
                 signal: this.state.abortController.signal
             });
@@ -177,7 +188,6 @@ const NexusApp = {
             }
 
             // Synthesis Complete
-            this.notify("Synthesis complete");
             await this.synchronize();
             this.refreshUI();
         } catch (e) {
@@ -201,8 +211,19 @@ const NexusApp = {
         const container = document.getElementById('chat-history');
         const row = document.createElement('div');
         row.className = `msg-row ${role} animate-in`;
-        row.innerHTML = `<div class="bubble">${role === 'user' ? this.sanitize(text) : text}</div>`;
+        
+        const label = role === 'user' ? 'You' : 'Nexus AI';
+        const icon = role === 'user' ? 'user' : 'sparkles';
+        
+        row.innerHTML = `
+            <div class="msg-identity">
+                <i data-lucide="${icon}" size="12"></i>
+                <span>${label}</span>
+            </div>
+            <div class="bubble">${role === 'user' ? this.sanitize(text) : text}</div>
+        `;
         container.appendChild(row);
+        lucide.createIcons();
         this.scrollToBottom();
         return row;
     },
@@ -265,13 +286,17 @@ const NexusApp = {
             return;
         }
 
-        list.innerHTML = this.state.memory.slice(0, 15).map(item => `
-            <div class="history-item-nav">
-                <div class="nav-content" onclick="NexusApp.restoreNode('${item.id}')">
+        list.innerHTML = this.state.memory.map(item => `
+            <div class="history-item-nav" 
+                 oncontextmenu="NexusApp.showContextMenu('${item.id}', event)"
+                 onmousedown="NexusApp.handleHistoryPressStart('${item.id}', event)" 
+                 onmouseup="NexusApp.handleHistoryPressEnd()"
+                 onmouseleave="NexusApp.handleHistoryPressEnd()"
+                 onclick="NexusApp.restoreNode('${item.id}')">
+                <div class="nav-content">
                     <div class="nav-query">${this.sanitize(item.query)}</div>
                     <div class="nav-ts">${new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
-                <button class="nav-delete" onclick="NexusApp.deleteHistoryNode('${item.id}', event)"><i data-lucide="x"></i></button>
             </div>`).join('');
         lucide.createIcons();
     },
@@ -281,6 +306,12 @@ const NexusApp = {
         if (!stats) return;
         const grid = document.getElementById('stats-page-grid');
         const sizeMb = (stats.storage_size_bytes / (1024 * 1024)).toFixed(2);
+
+        const modelId = this.state.config.model === 'precise' ? 'mistral-large-latest' : 'codestral-latest';
+        const modelLabel = this.state.config.model === 'precise' ? 'Mistral Large 3' : 'Devstral 2';
+        const modelStats = (stats.model_usage && stats.model_usage[modelId]) 
+            ? stats.model_usage[modelId] 
+            : { input: 0, output: 0, cost: 0.0 };
 
         grid.innerHTML = `
             <div class="metric-card">
@@ -296,8 +327,16 @@ const NexusApp = {
                 <div class="metric-label">Index Volume</div>
             </div>
             <div class="metric-card">
-                <div class="metric-val">Ready</div>
-                <div class="metric-label">Fabric Integrity</div>
+                <div class="metric-val">${modelStats.input.toLocaleString()}</div>
+                <div class="metric-label">${modelLabel} Input Tokens</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-val">${modelStats.output.toLocaleString()}</div>
+                <div class="metric-label">${modelLabel} Output Tokens</div>
+            </div>
+            <div class="metric-card" style="border-color: var(--primary-soft);">
+                <div class="metric-val" style="color: var(--primary);">$${modelStats.cost.toFixed(4)}</div>
+                <div class="metric-label">${modelLabel} Cost</div>
             </div>`;
     },
 
@@ -344,6 +383,104 @@ const NexusApp = {
         }, 800);
     },
 
+    handleHistoryPressStart(id, event) {
+        this.state.isLongPress = false;
+        this.pressTimer = setTimeout(() => {
+            this.state.isLongPress = true;
+            this.showContextMenu(id, event);
+        }, 600);
+    },
+
+    handleHistoryPressEnd() {
+        clearTimeout(this.pressTimer);
+    },
+
+    showContextMenu(id, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        this.state.selectedHistoryId = id;
+        const menu = document.getElementById('history-context-menu');
+        menu.style.display = 'block';
+        
+        // Position intelligently
+        let x = event.clientX;
+        let y = event.clientY;
+        if (x + 160 > window.innerWidth) x -= 160;
+        if (y + 150 > window.innerHeight) y -= 150;
+        
+        menu.style.left = `${x}px`;
+        menu.style.top = `${y}px`;
+        
+        const close = () => {
+            menu.style.display = 'none';
+            document.removeEventListener('click', close);
+        };
+        setTimeout(() => document.addEventListener('click', close), 10);
+    },
+
+    async deleteCurrentContext() {
+        const id = this.state.selectedHistoryId;
+        if (!id) return;
+        try {
+            const res = await fetch(`${this.state.config.api}/history/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                this.notify("Node de-indexed");
+                await this.synchronize();
+                this.refreshUI();
+            }
+        } catch (e) { this.notify("De-indexing failure", "error"); }
+    },
+
+    async renameCurrentContext() {
+        const id = this.state.selectedHistoryId;
+        if (!id) return;
+        const node = this.state.memory.find(m => m.id === id);
+        const newTitle = prompt("Rename Synthesis Node:", node.query);
+        if (!newTitle || newTitle === node.query) return;
+        
+        try {
+            const res = await fetch(`${this.state.config.api}/history/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: newTitle })
+            });
+            if (res.ok) {
+                this.notify("Node relabeled");
+                await this.synchronize();
+                this.refreshUI();
+            }
+        } catch (e) { this.notify("Rename failed", "error"); }
+    },
+
+    async shareCurrentContext() {
+        const id = this.state.selectedHistoryId;
+        if (!id) return;
+        const node = this.state.memory.find(m => m.id === id);
+        const text = `Nexus AI Research Synthesis\n\nQuery: ${node.query}\n\n${node.answer}`;
+        try {
+            await navigator.clipboard.writeText(text);
+            this.notify("Synthesis copied to clipboard");
+        } catch (e) { this.notify("Copy failed", "error"); }
+    },
+
+    archiveCurrentContext() {
+        this.notify("Synthesis moved to archives (Simulated)");
+    },
+
+    async deleteHistoryNode(id, event) {
+        if (event) event.stopPropagation();
+        try {
+            const res = await fetch(`${this.state.config.api}/history/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                this.notify("Node de-indexed");
+                await this.synchronize();
+                this.refreshUI();
+            }
+        } catch (e) { this.notify("De-indexing failure", "error"); }
+    },
+
     async purge(source) {
         if (!confirm(`Permanently excise node "${source}"?`)) return;
         try {
@@ -373,8 +510,42 @@ const NexusApp = {
         if (this.state.activePage === 'library') this.renderLibrary();
         const res = await fetch(`${this.state.config.api}/stats`);
         this.state.stats = await res.json();
+        
         const statusEl = document.getElementById('stats-inline-val');
         if (statusEl) statusEl.innerText = `Index: ${this.state.stats.total_documents} Nodes`;
+
+        // Update Usage Metrics (Settings Page) - Filtered by current model
+        const inputTokensEl = document.getElementById('stat-input-tokens');
+        const outputTokensEl = document.getElementById('stat-output-tokens');
+        const totalCostEl = document.getElementById('stat-total-cost');
+
+        const modelId = this.state.config.model === 'precise' ? 'mistral-large-latest' : 'codestral-latest';
+        const modelStats = (this.state.stats.model_usage && this.state.stats.model_usage[modelId]) 
+            ? this.state.stats.model_usage[modelId] 
+            : { input: 0, output: 0, cost: 0.0 };
+
+        if (inputTokensEl) inputTokensEl.innerText = modelStats.input.toLocaleString();
+        if (outputTokensEl) outputTokensEl.innerText = modelStats.output.toLocaleString();
+        if (totalCostEl) totalCostEl.innerText = `$${modelStats.cost.toFixed(4)}`;
+
+        // Update Pricing Labels & Descriptive Text
+        const inputPriceEl = document.getElementById('price-input');
+        const outputPriceEl = document.getElementById('price-output');
+        const estimateEl = document.getElementById('pricing-estimate');
+        const usageLabelEl = document.getElementById('usage-tracking-label');
+        
+        const currentModelName = this.state.config.model === 'precise' ? 'Mistral Large 3' : 'Devstral 2';
+        if (usageLabelEl) usageLabelEl.innerText = `Real-time tracking for ${currentModelName}.`;
+
+        if (this.state.config.model === 'precise') {
+            if (inputPriceEl) inputPriceEl.innerHTML = `$0.50<span class="unit">/1M</span>`;
+            if (outputPriceEl) outputPriceEl.innerHTML = `$1.50<span class="unit">/1M</span>`;
+            if (estimateEl) estimateEl.innerText = `Estimates based on $0.50 (Input) / $1.50 (Output) per 1M tokens for ${currentModelName}.`;
+        } else {
+            if (inputPriceEl) inputPriceEl.innerHTML = `$0.40<span class="unit">/1M</span>`;
+            if (outputPriceEl) outputPriceEl.innerHTML = `$2.00<span class="unit">/1M</span>`;
+            if (estimateEl) estimateEl.innerText = `Estimates based on $0.40 (Input) / $2.00 (Output) per 1M tokens for ${currentModelName}.`;
+        }
     },
 
     formatMarkdown(text) {
@@ -402,6 +573,10 @@ const NexusApp = {
     },
 
     restoreNode(id) {
+        if (this.state.isLongPress) {
+            this.state.isLongPress = false;
+            return;
+        }
         const node = this.state.memory.find(m => m.id === id);
         if (!node) return;
         this.navigate('chat');
@@ -410,7 +585,17 @@ const NexusApp = {
         this.appendMessage('user', node.query);
         const ai = this.appendMessage('ai', '');
         ai.querySelector('.bubble').innerHTML = `<div class="rich-content">${this.formatMarkdown(node.answer)}</div>`;
-        this.notify("Knowledge node restored");
+    },
+
+    newChat() {
+        this.navigate('chat');
+        const hist = document.getElementById('chat-history');
+        if (hist) hist.innerHTML = '';
+        const input = document.getElementById('chat-input');
+        if (input) {
+            input.value = '';
+            input.focus();
+        }
     },
 
     openModal(id) { document.getElementById(`${id}-overlay`).style.display = 'flex'; },
@@ -438,7 +623,6 @@ const NexusApp = {
         this.state.multiSynthesis = !this.state.multiSynthesis;
         const el = document.getElementById('toggle-synthesis');
         if (el) el.classList.toggle('active', this.state.multiSynthesis);
-        this.notify(`Cross-Document Synthesis: ${this.state.multiSynthesis ? 'ON' : 'OFF'}`);
         
         // Strategy modulation
         this.state.config.strategy = this.state.multiSynthesis ? 'hybrid' : 'similarity';
@@ -447,19 +631,23 @@ const NexusApp = {
 
     setModel(type) {
         this.state.config.model = type;
+        localStorage.setItem('nexus_default_model', type);
+        
         const preciseEl = document.getElementById('model-precise');
         const fastEl = document.getElementById('model-fast');
         
         if (preciseEl) {
-            preciseEl.style.borderColor = type === 'precise' ? 'var(--primary)' : 'var(--border-subtle)';
-            preciseEl.style.background = type === 'precise' ? 'var(--primary-soft)' : 'var(--bg-surface)';
+            preciseEl.style.borderColor = type === 'precise' ? 'var(--primary)' : 'var(--border-warm)';
+            preciseEl.style.background = type === 'precise' ? 'var(--bg-sand)' : 'var(--bg-ivory)';
+            preciseEl.style.boxShadow = type === 'precise' ? 'var(--ring-brand)' : 'var(--shadow-whisper)';
         }
         if (fastEl) {
-            fastEl.style.borderColor = type === 'fast' ? 'var(--primary)' : 'var(--border-subtle)';
-            fastEl.style.background = type === 'fast' ? 'var(--primary-soft)' : 'var(--bg-surface)';
+            fastEl.style.borderColor = type === 'fast' ? 'var(--primary)' : 'var(--border-warm)';
+            fastEl.style.background = type === 'fast' ? 'var(--bg-sand)' : 'var(--bg-ivory)';
+            fastEl.style.boxShadow = type === 'fast' ? 'var(--ring-brand)' : 'var(--shadow-whisper)';
         }
-        
-        this.notify(`Model: ${type === 'precise' ? 'Mistral Large' : 'Mistral Small'}`);
+
+        this.refreshUI();
     }
 };
 
@@ -468,8 +656,15 @@ window.NexusApp = NexusApp;
 window.navigate = (p) => NexusApp.navigate(p);
 window.openModal = (id) => NexusApp.openModal(id);
 window.closeModal = (id) => NexusApp.closeModal(id);
+window.newChatStart = () => NexusApp.newChat();
+
 window.triggerHeroQuery = () => {
     const q = document.getElementById('hero-research-query').value;
-    NexusApp.synthesize(q);
+    if (q.trim()) {
+        NexusApp.synthesize(q);
+    } else {
+        NexusApp.newChat();
+    }
 };
+
 window.addEventListener('load', () => NexusApp.init());

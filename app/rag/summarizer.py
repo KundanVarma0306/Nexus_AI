@@ -35,6 +35,8 @@ class SummaryResponse(BaseModel):
     word_count: int
     processing_time_seconds: float
     model_used: str
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 
 class Summarizer:
@@ -173,10 +175,16 @@ Executive Summary:"""
 
             response = chain.invoke({"doc_content": truncated_content})
 
-            # Extract content from response
+            # Extract content and tokens from response
             summary = ""
+            input_tokens = 0
+            output_tokens = 0
+            
             if hasattr(response, "content"):
                 summary = response.content
+                usage = response.response_metadata.get("token_usage", {})
+                input_tokens = usage.get("prompt_tokens", 0)
+                output_tokens = usage.get("completion_tokens", 0)
             elif isinstance(response, dict):
                 summary = response.get("content", "")
 
@@ -195,6 +203,8 @@ Executive Summary:"""
                 word_count=len(summary.split()),
                 processing_time_seconds=elapsed,
                 model_used=self.model,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens
             )
 
         except Exception as e:
@@ -370,8 +380,14 @@ Research Summary:"""
             response = chain.invoke({})
 
             summary = ""
+            input_tokens = 0
+            output_tokens = 0
+
             if hasattr(response, "content"):
                 summary = response.content
+                usage = response.response_metadata.get("token_usage", {})
+                input_tokens = usage.get("prompt_tokens", 0)
+                output_tokens = usage.get("completion_tokens", 0)
             elif isinstance(response, dict):
                 summary = response.get("content", "")
 
@@ -385,6 +401,8 @@ Research Summary:"""
                 word_count=len(summary.split()),
                 processing_time_seconds=elapsed,
                 model_used=self.model,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens
             )
 
         except Exception as e:

@@ -97,30 +97,26 @@ class Retriever:
 
     def get_context_from_results(self, results: List[RetrievalResult], max_chars: int = 12000) -> str:
         """
-        Assemble a structured, cross-document knowledge fabric for high-fidelity synthesis.
-        Groups fragments by source and provides a hierarchical index for the LLM.
+        Assemble a clean, cross-document knowledge fabric for synthesis.
+        Groups fragments by their actual source names.
         """
         if not results: return ""
         
-        # Group fragments by source for coherent cross-document reasoning
+        # Group fragments by source
         source_groups: Dict[str, List[str]] = {}
         for r in results:
             if r.source not in source_groups: source_groups[r.source] = []
-            source_groups[r.source].append(f"[Fragment {r.chunk_index}]: {r.document.page_content}")
+            source_groups[r.source].append(f"[Relevant Segment]: {r.document.page_content}")
 
-        # Construct the knowledge landscape
-        fabric = ["### DOCUMENT LANDSCAPE INDEX"]
-        for i, source in enumerate(source_groups.keys()):
-            fabric.append(f"{i+1}. SOURCE_NODE_{i}: {source}")
+        # Construct the context fabric
+        fabric = []
+        current_len = 0
         
-        fabric.append("\n### CORE KNOWLEDGE SEGMENTS")
-        current_len = sum(len(f) for f in fabric)
-        
-        for i, (source, fragments) in enumerate(source_groups.items()):
-            node_header = f"\n>> DOCUMENT_ID: SOURCE_NODE_{i} ({source})"
-            if current_len + len(node_header) > max_chars: break
-            fabric.append(node_header)
-            current_len += len(node_header)
+        for source, fragments in source_groups.items():
+            doc_header = f"\n--- From Source: {source} ---"
+            if current_len + len(doc_header) > max_chars: break
+            fabric.append(doc_header)
+            current_len += len(doc_header)
             
             for frag in fragments:
                 if current_len + len(frag) > max_chars: break

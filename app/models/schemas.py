@@ -23,6 +23,7 @@ class QueryRequest(BaseModel):
     search_type: str = Field("hybrid", description="Type of search: hybrid, similarity, mmr")
     return_sources: bool = Field(True, description="Whether to return source documents")
     return_context: bool = Field(True, description="Whether to return the context")
+    model: Optional[str] = Field(None, description="Mistral model to use")
 
 
 class SummaryRequest(BaseModel):
@@ -93,6 +94,8 @@ class QueryResponse(BaseModel):
     confidence_score: float
     processing_time_seconds: float
     model_used: str
+    input_tokens: Optional[int] = 0
+    output_tokens: Optional[int] = 0
 
 
 class SummaryResponse(BaseModel):
@@ -104,6 +107,8 @@ class SummaryResponse(BaseModel):
     word_count: int
     processing_time_seconds: float
     model_used: str
+    input_tokens: Optional[int] = 0
+    output_tokens: Optional[int] = 0
 
 
 class UploadResponse(BaseModel):
@@ -128,6 +133,10 @@ class StatsResponse(BaseModel):
     total_chunks: int
     storage_size_bytes: int
     last_updated: str
+    total_input_tokens: int = 0
+    total_output_tokens: int = 0
+    total_cost_usd: float = 0.0
+    model_usage: Dict[str, Any] = Field(default_factory=dict)
 
 
 class HealthResponse(BaseModel):

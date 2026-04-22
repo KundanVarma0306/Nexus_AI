@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -182,6 +182,23 @@
                         <!-- Metrics injected -->
                     </div>
 
+                    <div style="margin-top: 24px; padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                                    <i data-lucide="info" size="14"></i> Token Breakdown
+                                </h4>
+                                <p style="font-size: 0.75rem; color: var(--text-muted);"><strong>Input:</strong> Query + Document Context<br><strong>Output:</strong> Generated AI Synthesis</p>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                                    <i data-lucide="tag" size="14"></i> AI Model Pricing
+                                </h4>
+                                <p id="pricing-estimate" style="font-size: 0.75rem; color: var(--text-muted);">Estimates based on $0.50 (Input) / $1.50 (Output) per 1M tokens.</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div style="margin-top: 40px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 24px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                             <h3 style="font-size: 1.1rem; font-weight: 700;">Infrastructure Log</h3>
@@ -217,7 +234,7 @@
                                         <i data-lucide="target" style="color: var(--primary);"></i>
                                         <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--primary);">Precise</span>
                                     </div>
-                                    <span style="font-weight: 700; font-size: 1rem;">Mistral Large</span>
+                                    <span style="font-weight: 700; font-size: 1rem;">Mistral Large 3</span>
                                     <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Optimum accuracy for deep synthesis and complex reasoning.</p>
                                 </div>
                                 <div class="metric-card" id="model-fast" onclick="NexusApp.setModel('fast')" style="padding: 24px; height:auto;">
@@ -225,7 +242,7 @@
                                         <i data-lucide="zap" style="color: var(--text-muted);"></i>
                                         <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">High Speed</span>
                                     </div>
-                                    <span style="font-weight: 700; font-size: 1rem;">Mistral Small</span>
+                                    <span style="font-weight: 700; font-size: 1rem;">Devstral 2</span>
                                     <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Lower latency for quick summaries and initial discovery.</p>
                                 </div>
                             </div>
@@ -243,9 +260,72 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div style="padding-top: 32px; border-top: 1px solid var(--border-subtle);">
+                            <h3 style="font-size: 1.1rem; margin-bottom: 8px;">Usage & Token Metrics</h3>
+                            <p id="usage-tracking-label" style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;">Real-time tracking of neural compute resources.</p>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+                                <div class="metric-card" style="padding: 20px; text-align: center; position: relative;">
+                                    <div class="popover-trigger" style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                        Input Tokens <i data-lucide="help-circle" size="10"></i>
+                                        <div class="popover-content">
+                                            <strong>Neural Ingestion</strong>
+                                            <p>Query + document context sent to AI.</p>
+                                        </div>
+                                    </div>
+                                    <div id="stat-input-tokens" style="font-weight: 700; font-size: 1.4rem; color: var(--text-main);">0</div>
+                                </div>
+                                <div class="metric-card" style="padding: 20px; text-align: center; position: relative;">
+                                    <div class="popover-trigger" style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                        Output Tokens <i data-lucide="help-circle" size="10"></i>
+                                        <div class="popover-content">
+                                            <strong>Synthesis Energy</strong>
+                                            <p>AI response and reasoning generated.</p>
+                                        </div>
+                                    </div>
+                                    <div id="stat-output-tokens" style="font-weight: 700; font-size: 1.4rem; color: var(--text-main);">0</div>
+                                </div>
+                                <div class="metric-card" style="padding: 20px; text-align: center; border-color: var(--primary-soft); background: var(--bg-muted);">
+                                    <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--primary); margin-bottom: 8px;">Total Cost (USD)</div>
+                                    <div id="stat-total-cost" style="font-weight: 700; font-size: 1.4rem; color: var(--primary);">$0.00</div>
+                                </div>
+                            </div>
+
+                            <div class="economic-engine-wrap">
+                                <div class="engine-tag">
+                                    <i data-lucide="coins" size="14"></i>
+                                    <span>AI Model Pricing</span>
+                                </div>
+                                <div class="engine-grid">
+                                    <div class="engine-cell">
+                                        <div class="cell-label">Input</div>
+                                        <div id="price-input" class="cell-price">$0.50<span class="unit">/1M</span></div>
+                                    </div>
+                                    <div class="engine-separator"></div>
+                                    <div class="engine-cell">
+                                        <div class="cell-label">Output</div>
+                                        <div id="price-output" class="cell-price">$1.50<span class="unit">/1M</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 16px; padding: 12px; background: var(--bg-soft); border-radius: 8px; border: 1px dashed var(--border-subtle); display: flex; align-items: center; gap: 10px;">
+                                <i data-lucide="info" size="14" style="color: var(--text-muted);"></i>
+                                <p style="font-size: 11px; color: var(--text-muted);">Estimates based on Mistral production rates.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
+
+        <!-- CONTEXT MENU FOR HISTORY -->
+        <div id="history-context-menu" class="context-menu" style="display: none;">
+            <div class="menu-item delete" onclick="NexusApp.deleteCurrentContext()"><i data-lucide="trash-2"></i> Delete</div>
+            <div class="menu-item" onclick="NexusApp.renameCurrentContext()"><i data-lucide="edit-3"></i> Rename</div>
+            <div class="menu-item" onclick="NexusApp.archiveCurrentContext()"><i data-lucide="archive"></i> Archive</div>
+            <div class="menu-item" onclick="NexusApp.shareCurrentContext()"><i data-lucide="share-2"></i> Share</div>
+        </div>
 
         </main>
     </div>

@@ -23,10 +23,10 @@ This application implements a complete RAG pipeline that:
 └─────────────────┘     └────────┬────────┘     └─────────────────┘
                                   │
                                   ▼
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Streamlit     │◀────│   FastAPI       │◀────│   Mistral AI    │
-│   Frontend      │     │   Backend       │     │   (LLM + Embed) │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
+                        ┌─────────────────┐     ┌─────────────────┐
+                        │   FastAPI       │◀────│   Mistral AI    │
+                        │   Backend + UI  │     │   (LLM + Embed) │
+                        └─────────────────┘     └─────────────────┘
 ```
 
 ## 🚀 Features
@@ -93,10 +93,8 @@ cp .env.example .env
 uvicorn app.api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-6. **Run the Frontend** (in a new terminal)
-```bash
-streamlit run frontend/streamlit_app.py
-```
+6. **Access the Application**
+Open your browser and navigate to `http://localhost:8000`
 
 ### Option 2: Docker Deployment
 
@@ -112,7 +110,8 @@ docker-compose up --build
 ```
 
 3. **Access the Application**
-- Frontend: http://localhost:8501
+3. **Access the Application**
+- Unified Interface: http://localhost:8000
 - API Docs: http://localhost:8000/docs
 - Health Check: http://localhost:8000/health
 
@@ -208,7 +207,7 @@ project/
 ├── config/
 │   └── settings.py          # Configuration
 ├── frontend/
-│   └── streamlit_app.py    # Streamlit UI
+│   └── web/                 # Modern JS Frontend
 ├── database/
 │   └── chroma_db/          # Vector database
 ├── .env.example            # Environment template
@@ -301,7 +300,6 @@ MIT License
 - [LangChain](https://langchain.com/) - LLM framework
 - [Mistral AI](https://mistral.ai/) - LLM and embeddings
 - [ChromaDB](https://www.trychroma.com/) - Vector database
-- [Streamlit](https://streamlit.io/) - Frontend framework
 
 ## 📞 Support
 

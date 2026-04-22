@@ -1,15 +1,15 @@
-"""
-AI Research Assistant - Configuration Settings
-Production-grade settings management using Pydantic
-"""
-
 import os
 from pathlib import Path
 from typing import Any, List, Optional
 
-from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
+try:
+    from pydantic import Field, field_validator
+    from pydantic_settings import BaseSettings, SettingsConfigDict
+except ImportError:
+    # Fallback to satisfy IDE or environment mismatches
+    from pydantic.v1 import Field
+    from pydantic import field_validator
+    from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     """Application settings with environment variable support."""
@@ -26,7 +26,6 @@ class Settings(BaseSettings):
     def parse_list(cls, v: Any) -> Any:
         """Parse a list from a comma-separated string if needed."""
         if isinstance(v, str):
-            # Check if it looks like JSON, if not, treat as comma-separated
             v = v.strip()
             if v.startswith("[") and v.endswith("]"):
                 import json
@@ -72,12 +71,6 @@ class Settings(BaseSettings):
     api_port: int = Field(
         default=8000,
         description="FastAPI server port"
-    )
-
-    # Streamlit Configuration
-    streamlit_port: int = Field(
-        default=8501,
-        description="Streamlit frontend port"
     )
 
     # Document Processing Configuration
@@ -145,7 +138,6 @@ class Settings(BaseSettings):
 
     def validate_api_key(self, provided_key: str) -> bool:
         """Validate API key."""
-        # Note: In production, use environment-sealed keys
         env_key = os.getenv("APP_API_KEY")
         if not env_key: return True
         return provided_key == env_key

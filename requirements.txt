@@ -17,8 +17,7 @@ fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
 gunicorn>=23.0.0
 
-# Streamlit Frontend
-streamlit>=1.38.0
+
 
 # Data Processing
 pydantic>=2.9.0

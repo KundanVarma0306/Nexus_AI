@@ -176,6 +176,7 @@ async def query_documents(request: QueryRequest):
             query=request.query,
             top_k=request.top_k,
             search_type=request.search_type,
+            model=request.model
         )
         
         sources = [RetrievalSource(
@@ -205,6 +206,7 @@ async def query_documents_streaming(request: QueryRequest):
                 query=request.query,
                 top_k=request.top_k,
                 search_type=request.search_type,
+                model=request.model,
             ):
                 full_answer += chunk
                 yield chunk
@@ -227,6 +229,22 @@ async def delete_history_item(history_id: str):
         raise HTTPException(status_code=404, detail="History node not found")
     return {"message": "Node de-indexed from history"}
 
+@app.patch("/api/history/{history_id}")
+async def rename_history_item(history_id: str, request: Dict[str, str]):
+    """Rename a specific history node."""
+    new_query = request.get("query")
+    if not new_query:
+        raise HTTPException(status_code=400, detail="New query title required")
+    if not research_service.rename_history_item(history_id, new_query):
+        raise HTTPException(status_code=404, detail="History node not found")
+    return {"message": "Node renamed successfully"}
+
+@app.post("/api/history/migrate")
+async def migrate_history():
+    """Trigger a global contextual renaming of all history nodes."""
+    research_service.migrate_history_titles()
+    return {"message": "History titles migrated successfully"}
+
 @app.get("/api/documents", response_model=List[Dict[str, Any]])
 async def list_documents():
     """Enumerate all active knowledge nodes."""
@@ -245,10 +263,14 @@ async def get_stats():
     """Diagnostic system metrics."""
     s = research_service.get_stats()
     return StatsResponse(
-        total_documents=s.total_documents,
-        total_chunks=s.total_chunks,
-        storage_size_bytes=s.storage_size_bytes,
-        last_updated=s.last_updated,
+        total_documents=s["total_documents"],
+        total_chunks=s["total_chunks"],
+        storage_size_bytes=s["storage_size_bytes"],
+        last_updated=s["last_updated"],
+        total_input_tokens=s.get("total_input_tokens", 0),
+        total_output_tokens=s.get("total_output_tokens", 0),
+        total_cost_usd=s.get("total_cost_usd", 0.0),
+        model_usage=s.get("model_usage", {})
     )
 
 app.mount("/", StaticFiles(directory="frontend/web", html=True), name="static")
